@@ -1,8 +1,6 @@
 # spotify2slsk
 
-**Liberate your Spotify library.**
-
-Download your entire Spotify library from Soulseek with just a few clicks.
+Easily download your spotify library via soulseek. 
 
 ```
   ┌─┐┌─┐┌─┐┌┬┐┬┌─┐┬ ┬┌─┐┌─┐┬  ┌─┐┬┌─
@@ -12,13 +10,14 @@ Download your entire Spotify library from Soulseek with just a few clicks.
 
 ## Quick Start
 
-1. Run the "build" file to generate a exactuable in the release folder
-2. Double-click to run
+1. Run the "build.bat", which will generate a .exe in a "release" folder 
+2. Double-click the .exe to run
 3. Follow the prompts (generate account or use existing)
 4. Login with Spotify
-5. Download ALL
-6. Organize into folders
-7. Done! Music on your Desktop.
+5. Download all or select certain playlists
+6. Have the app sort the downloads into folders and select where to place them
+7. :DDDDD yay
+
 
 ## ⚠️ Important Notes
 
@@ -30,15 +29,6 @@ The app needs network access to connect to Soulseek. Click **"Allow access"** wh
 
 **First Run Downloads ~50MB**
 On first launch, the app downloads the Soulseek client (slskd) automatically. This only happens once.
-
-## Features
-
-- **One-click Spotify login** — No API keys, no CSV exports, just log in
-- **Zero setup** — App downloads and manages everything automatically  
-- **Smart search** — Tries multiple query variations to find tracks
-- **Auto mode** — Downloads best quality matches (FLAC preferred)
-- **Progress tracking** — Stop and resume anytime
-- **Desktop output** — Organizes music right to your Desktop
 
 ## Menu Options
 
@@ -128,8 +118,4 @@ MIT — meow meow meow meow meow meow
 
 ## Legal
 
-For personal use. Support hard working artists by going to shows and buying merch.
-
----
-
-fuck spotify
+For personal use. Support artists n alladat

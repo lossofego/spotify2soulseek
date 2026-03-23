@@ -1,0 +1,22 @@
+# Core dependencies (required)
+requests>=2.28.0
+rich>=13.0.0
+
+# ============================================
+# Optional: Background features
+# ============================================
+# These enable system tray icon and notifications.
+# The app works fine without them.
+
+# System tray icon (shows download progress in taskbar)
+# pip install pystray pillow
+# pystray>=0.19.0
+# pillow>=9.0.0
+
+# Windows notifications (toast popups)
+# pip install win10toast
+# win10toast>=0.9
+
+# Cross-platform notifications (Mac/Linux)
+# pip install plyer
+# plyer>=2.1.0

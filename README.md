@@ -12,7 +12,7 @@ Download your entire Spotify library from Soulseek with just a few clicks.
 
 ## Quick Start
 
-1. Download `spotify2slsk.exe`
+1. Run the "build" file to generate a exactuable in the release folder
 2. Double-click to run
 3. Follow the prompts (generate account or use existing)
 4. Login with Spotify
@@ -124,12 +124,12 @@ Output: `dist/spotify2slsk.exe` (~25MB)
 
 ## License
 
-MIT — Do whatever you want.
+MIT — meow meow meow meow meow meow
 
 ## Legal
 
-For personal use. Support artists by going to shows and buying merch.
+For personal use. Support hard working artists by going to shows and buying merch.
 
 ---
 
-*made with spite towards streaming platforms*
+fuck spotify

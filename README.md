@@ -12,7 +12,7 @@ Easily download your spotify library via soulseek.
 
 1. Run the "build.bat", which will generate a .exe in a "release" folder 
 2. Double-click the .exe to run
-3. Follow the prompts (generate account or use existing)
+3. Follow the prompts (generate soulseek account or use existing)
 4. Login with Spotify
 5. Download all or select certain playlists
 6. Have the app sort the downloads into folders and select where to place them
@@ -22,13 +22,13 @@ Easily download your spotify library via soulseek.
 ## Important Notes
 
 - Windows SmartScreen Warning
-When you first run the .exe, Windows may show "Windows protected your PC". This is because the app isn't signed with a certificate (costs $$$). Click "More info" → "Run anyway".
+When u first run the .exe, windows may show "Windows protected your PC". This is because the app isn't signed with a certificate. Just click more info, then run anyway. 
 
 - Firewall Prompt
-The app needs network access to connect to Soulseek. Click "Allow access" when Windows Firewall asks.
+The app needs network access to connect to Soulseek. Click "Allow access" when windows firewall asks.
 
 - First Run Downloads ~50MB
-On first launch, the app downloads the Soulseek client (slskd) automatically. This only happens once.
+On first launch, the app downloads the soulseek client (slskd) automatically. This only happens the first time u run the .exe. 
 
 ## Menu Options
 
@@ -46,13 +46,13 @@ On first launch, the app downloads the Soulseek client (slskd) automatically. Th
 
 ## File Locations
 Downloads saved to: `%LOCALAPPDATA%\spotify2slsk\downloads\`
-*Organized output: Your Desktop → `spotify2slsk Music` folder (or custom location)
+*Organized output: ur Desktop to `spotify2slsk Music` folder (or custom location)
 
-Config/Progress: `%LOCALAPPDATA%\spotify2slsk\`
+Config/progress: `%LOCALAPPDATA%\spotify2slsk\`
 
 ## Troubleshooting
 "Windows protected your PC"
-- Click "More info" → "Run anyway"
+- Click "more info" then "run anyway"
 - This is normal for unsigned applications
 
 "No internet connection"
@@ -69,14 +69,15 @@ Config/Progress: `%LOCALAPPDATA%\spotify2slsk\`
 - Obscure tracks may not be available
 
 Downloads are slow
-- Normal for Soulseek (peer-to-peer)
+- This is normal for soulseek. 
 - Let it run in background
 - Speed depends on who's sharing
+- you may want to consider using a VPN when using soulseek - mullvad is cheap and a good service. 
 
 Spotify login fails
 - Make sure browser opens the auth page
 - Click through any certificate warnings (localhost)
-- If stuck, close and retry
+- if it gets stuck, close and try again. 
 
 ## Running from Source
 
@@ -106,7 +107,7 @@ Output: `dist/spotify2slsk.exe` (~25MB)
 ## Privacy
 
 - Credentials stored locally only (`%LOCALAPPDATA%\spotify2slsk\`)
-- No telemetry, no tracking
+- No tracking
 - Delete `config.json` to remove saved credentials
 
 ## License

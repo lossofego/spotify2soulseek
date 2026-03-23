@@ -1,7 +1,7 @@
 # spotify2slsk
 
-Easily download your spotify library via soulseek on windows 
-(**MAC USERS SEE NOTES ON BOTTOM OF READ ME**). 
+Easily download your spotify library via soulseek on windows   
+(**MAC USERS SEE NOTES ON BOTTOM OF READ ME**).   
 
 ```
   ┌─┐┌─┐┌─┐┌┬┐┬┌─┐┬ ┬┌─┐┌─┐┬  ┌─┐┬┌─
@@ -19,7 +19,7 @@ Easily download your spotify library via soulseek on windows
 6. Have the app sort the downloads into folders and select where to place them
 7. :DDDDD yay
 
- **MAC USERS SEE NOTES ON BOTTOM OF READ ME**
+
 ## Important Notes
 
 - Windows SmartScreen Warning

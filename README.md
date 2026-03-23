@@ -105,34 +105,30 @@ build.bat
 
 Output: `dist/spotify2slsk.exe` (~25MB)
 
-## NOTES FOR MAC USERS 
-Running spotify2slsk on Mac
+## NOTES FOR MAC USERS   
+Running spotify2slsk on Mac  
 
-- Step 1: Install Python
-Open Terminal (search "Terminal" on ur mac), then copy and paste the following:
-"brew install python3"
+Step 1: Install Python  
+Open Terminal (search "Terminal" on ur mac), then copy and paste the following:  
+  "brew install python3"  
 
-If that doesn't work, download Python from https://www.python.org/downloads/
+- If that doesn't work, download Python from https://www.python.org/downloads/ <br />
 
-- Step 2: Download the app
-Download and unzip the project folder.
+Step 2: Download and unzip the project folder. <br />
 
-- Step 3: Run it
-In the same terminal, copy and paste the following:
+Step 3: 
+  In the same terminal, copy and paste the following: <br />
 
-"cd ~/Downloads/spotify2slsk
-pip3 install -r requirements.txt
-python3 downloader.py"
+"cd ~/Downloads/spotify2slsk  <br />
+pip3 install -r requirements.txt <br />
+python3 downloader.py" <br />
 
-If you see a security warning
-Mac might say something like "slskd can't be opened because it's from an unidentified developer."
+Mac might give you a security warning, and say something like "slskd can't be opened because it's from an unidentified developer."  
+if this is the case, go to system references, then Security & Privacy, then click "allow anyway", then run the app again.  
 
-if this is the case, go to system references → Security & Privacy → click "allow Anyway", then run the app again.
+If Spotify login shows a certificate warning, just click through it. This is normal.   
 
-If Spotify login shows a certificate warning
-This is normal, just click through it.
-
-if this doesnt work or something breaks, please take a picture and let me know! did not get a chance to do as much testing on mac systems. 
+if this doesnt work or something breaks, please take a picture and let me know! did not get a chance to do as much testing on mac systems.   
 
 ## Privacy
 

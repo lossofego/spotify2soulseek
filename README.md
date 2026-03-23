@@ -19,7 +19,7 @@ Easily download your spotify library via soulseek.
 7. :DDDDD yay
 
 
-## ⚠️ Important Notes
+## Important Notes
 
 **Windows SmartScreen Warning**
 When you first run the .exe, Windows may show "Windows protected your PC". This is because the app isn't signed with a certificate (costs $$$). Click **"More info"** → **"Run anyway"**.

@@ -22,19 +22,19 @@ Easily download your spotify library via soulseek.
 ## Important Notes
 
 - Windows SmartScreen Warning
-When u first run the .exe, windows may show "Windows protected your PC". This is because the app isn't signed with a certificate. Just click more info, then run anyway. 
+When u first run the .exe, windows may show "windows protected your PC". This is because the app isn't signed with a certificate. Just click more info, then run anyway. 
 
 - Firewall Prompt
-The app needs network access to connect to Soulseek. Click "Allow access" when windows firewall asks.
+The app needs network access to connect to Soulseek. Click "allow access" when windows firewall asks.
 
-- First Run Downloads ~50MB
-On first launch, the app downloads the soulseek client (slskd) automatically. This only happens the first time u run the .exe. 
+- First Run Downloads 
+On first launch, the app downloads the soulseek client automatically, which is ~50mb. This only happens the first time u run the .exe. 
 
 ## Menu Options
 
 | Key | Action |
 |-----|--------|
-| 1 | Login with Spotify / Refresh library |
+| 1 | Login with spotify / refresh library |
 | 2 | Import from CSV files (alternative) |
 | 3 | Download ALL (auto mode) |
 | 4 | Download a single playlist |
@@ -46,7 +46,7 @@ On first launch, the app downloads the soulseek client (slskd) automatically. Th
 
 ## File Locations
 Downloads saved to: `%LOCALAPPDATA%\spotify2slsk\downloads\`
-*Organized output: ur Desktop to `spotify2slsk Music` folder (or custom location)
+Organized output: ur Desktop to `spotify2slsk Music` folder (or custom location)
 
 Config/progress: `%LOCALAPPDATA%\spotify2slsk\`
 

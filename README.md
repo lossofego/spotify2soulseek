@@ -115,4 +115,4 @@ MIT — meow meow meow meow meow meow
 
 ## Legal
 
-For personal use. Support artists n alladat
+For personal use. Support artists n alladat. made by cowgirl

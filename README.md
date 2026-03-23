@@ -21,13 +21,13 @@ Easily download your spotify library via soulseek.
 
 ## Important Notes
 
-**Windows SmartScreen Warning**
-When you first run the .exe, Windows may show "Windows protected your PC". This is because the app isn't signed with a certificate (costs $$$). Click **"More info"** → **"Run anyway"**.
+- Windows SmartScreen Warning
+When you first run the .exe, Windows may show "Windows protected your PC". This is because the app isn't signed with a certificate (costs $$$). Click "More info" → "Run anyway".
 
-**Firewall Prompt**
-The app needs network access to connect to Soulseek. Click **"Allow access"** when Windows Firewall asks.
+- Firewall Prompt
+The app needs network access to connect to Soulseek. Click "Allow access" when Windows Firewall asks.
 
-**First Run Downloads ~50MB**
+- First Run Downloads ~50MB
 On first launch, the app downloads the Soulseek client (slskd) automatically. This only happens once.
 
 ## Menu Options
@@ -45,38 +45,35 @@ On first launch, the app downloads the Soulseek client (slskd) automatically. Th
 | q | Quit |
 
 ## File Locations
+Downloads saved to: `%LOCALAPPDATA%\spotify2slsk\downloads\`
+*Organized output: Your Desktop → `spotify2slsk Music` folder (or custom location)
 
-**Downloads saved to:** `%LOCALAPPDATA%\spotify2slsk\downloads\`
-
-**Organized output:** Your Desktop → `spotify2slsk Music` folder (or custom location)
-
-**Config/Progress:** `%LOCALAPPDATA%\spotify2slsk\`
+Config/Progress: `%LOCALAPPDATA%\spotify2slsk\`
 
 ## Troubleshooting
-
-**"Windows protected your PC"**
+"Windows protected your PC"
 - Click "More info" → "Run anyway"
 - This is normal for unsigned applications
 
-**"No internet connection"**
+"No internet connection"
 - Check your network connection
 - Make sure firewall isn't blocking the app
 
-**"Login failed: INVALIDPASS"**  
+"Login failed: INVALIDPASS"  
 - The username exists with a different password
 - Generate a new random account instead
 
-**"No results found"**
+"No results found"
 - Some tracks aren't on Soulseek
 - Use option 5 to retry with manual search
 - Obscure tracks may not be available
 
-**Downloads are slow**
+Downloads are slow
 - Normal for Soulseek (peer-to-peer)
 - Let it run in background
 - Speed depends on who's sharing
 
-**Spotify login fails**
+Spotify login fails
 - Make sure browser opens the auth page
 - Click through any certificate warnings (localhost)
 - If stuck, close and retry

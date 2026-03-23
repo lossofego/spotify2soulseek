@@ -10,11 +10,11 @@ Easily download your spotify library via soulseek.
 
 ## Quick Start
 
-1. Run the "build.bat", which will generate a .exe in a "release" folder 
-2. Double-click the .exe to run
-3. Follow the prompts (generate soulseek account or use existing)
-4. Login with Spotify
-5. Download all or select certain playlists
+1. Run the "build.bat" file, which will generate a .exe file in a "release" folder 
+2. go to "release" folder, then double-click the spotify2slsk.exe to run
+3. Let the program intialize and follow the prompts (generate soulseek account or use existing)
+4. Login with spotify
+5. Download all or select certain playlists to download
 6. Have the app sort the downloads into folders and select where to place them
 7. :DDDDD yay
 

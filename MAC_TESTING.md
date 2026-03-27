@@ -25,9 +25,6 @@ Mac might say something like "slskd can't be opened because it's from an unident
 
 Then run the app again.
 
-## If Spotify login shows a certificate warning
-This is normal - just click through it.
-
 ---
 
 **Something broke?** Screenshot the error and send it to me!

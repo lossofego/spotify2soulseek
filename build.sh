@@ -21,6 +21,10 @@ echo
 echo "Installing system tray and notification support..."
 python3 -m pip install pystray pillow plyer
 
+# Install unicode transliteration for smart search
+echo "Installing search dependencies..."
+python3 -m pip install unidecode
+
 # Clean previous builds
 echo
 echo "Cleaning previous builds..."
@@ -51,6 +55,7 @@ echo
 echo "Bundled features:"
 echo "  [x] Spotify OAuth login"
 echo "  [x] Soulseek auto-registration"
+echo "  [x] Smart search with unicode support"
 echo "  [x] System tray icon"
 echo "  [x] Desktop notifications"
 echo

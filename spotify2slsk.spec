@@ -18,6 +18,7 @@ hidden_imports += [
     'charset_normalizer',
     'certifi',
     'idna',
+    'unidecode',
 ]
 
 # Try to include optional tray/notification packages if installed
@@ -53,6 +54,7 @@ excludes = [
     'scipy',
     'test',
     'tests',
+    'cryptography',  # no longer needed — HTTP loopback for OAuth
 ]
 
 # Only exclude PIL if pystray is not being used
@@ -99,5 +101,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon path here if you have one: icon='icon.ico'
+    icon='icon.ico',
 )

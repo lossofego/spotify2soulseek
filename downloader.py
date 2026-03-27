@@ -2,7 +2,6 @@
 # spotify2slsk - download spotify playlists from soulseek
 
 import json, os, re, shutil, signal, sys
-from datetime import datetime
 
 from rich.console import Console
 from rich.table import Table
@@ -17,7 +16,7 @@ from slskd_manager import (
 )
 from config import load_config, save_config, is_configured, validate_soulseek_username, generate_username, generate_password
 from slskd_client import SlskdClient, SoulseekLoginError
-from csv_import import run_import, import_all_files
+from csv_import import run_import
 from spotify_auth import (
     spotify_login, is_logged_in, logout, get_valid_token,
     SpotifyClient, fetch_spotify_library
@@ -309,11 +308,12 @@ def start_soulseek(config):
             progress.update(task, description=msg)
         
         try:
-            start_slskd(config['soulseek_username'], config['soulseek_password'], progress_callback=update)
+            start_slskd(config['soulseek_username'], config['soulseek_password'],
+                       web_port=config.get('slskd_port'), progress_callback=update)
         except Exception as e:
             raise Exception(f"Failed to start Soulseek client: {e}")
     
-    # Connect to slskd API
+    # Connect to slskd API — auto-detects port from slskd_manager
     client = SlskdClient()
     client.connect()
     
@@ -630,16 +630,49 @@ def organize_downloads():
     console.print(f"   [bold]{organized_dir}[/bold]")
 
 
+# === DOWNLOAD STATE HELPERS ===
+# slskd uses compound state strings like "Completed, Succeeded" or "Completed, Errored"
+_TERMINAL_SUCCESS = {'Succeeded'}
+_TERMINAL_FAIL = {'Errored', 'Cancelled', 'TimedOut'}
+
+def _is_terminal(state):
+    """Check if a state string indicates the transfer is done"""
+    for s in _TERMINAL_SUCCESS | _TERMINAL_FAIL:
+        if s in state:
+            return True
+    return False
+
+def _is_success(state):
+    """Check if a state string indicates successful completion"""
+    for s in _TERMINAL_SUCCESS:
+        if s in state:
+            return True
+    return False
+
+
 # === PROCESSING ===
 def process_tracks(client, config, tracks, source_name, auto_mode=True):
     global tray
     progress_data = load_progress()
     timeout = config.get('search_timeout', 90)
+    format_pref = config.get('format_preference', 'mp3')
     completed_set = set(progress_data['completed'])
+    skipped_set = set(progress_data['skipped'])
     
-    remaining = [t for t in tracks 
-                 if f"{t['artist']} - {t['name']}" not in progress_data['completed']
-                 and f"{t['artist']} - {t['name']}" not in progress_data['skipped']]
+    # Track IDs include format tag so mp3 and lossless are tracked independently
+    # Format: "Artist - Title [mp3]" or "Artist - Title [lossless]"
+    remaining = []
+    for t in tracks:
+        base_id = f"{t['artist']} - {t['name']}"
+        tagged_id = f"{base_id} [{format_pref}]"
+        
+        # Skip if completed in this specific format
+        if tagged_id in completed_set:
+            continue
+        # Skip if user explicitly skipped this track (format-agnostic)
+        if base_id in skipped_set or tagged_id in skipped_set:
+            continue
+        remaining.append(t)
     
     if not remaining:
         console.print("[green]All tracks already processed![/green]")
@@ -648,6 +681,7 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
     total = len(remaining)
     queued = 0
     failed = 0
+    queued_files = []  # track filenames we've queued for download monitoring
     
     # Update tray with initial status
     if tray:
@@ -658,7 +692,9 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
     for i, song in enumerate(remaining):
         artist = song['artist']
         title = song['name']
-        track_id = f"{artist} - {title}"
+        album = song.get('album', '')
+        duration_ms = song.get('duration_ms', 0)
+        track_id = f"{artist} - {title} [{format_pref}]"
         
         if track_id in completed_set:
             continue
@@ -688,9 +724,18 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
                 candidates = filter_results(responses, config)
                 
                 if candidates:
-                    # Score each candidate based on how well it matches
+                    # Score each candidate using full metadata
+                    # Pass the file_obj dict (has bitRate, size, length, sampleRate)
+                    # plus Spotify metadata (album, duration_ms, format preference)
                     for c in candidates:
-                        c['match_score'] = score_result(c['filename'], artist, title)
+                        c['match_score'] = score_result(
+                            c['file_obj'],       # full slskd file dict
+                            artist,
+                            title,
+                            album=album,
+                            duration_ms=duration_ms,
+                            format_preference=format_pref
+                        )
                     all_candidates.extend(candidates)
                     
                     # If we found good matches on first query, don't try more
@@ -735,6 +780,7 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
                     completed_set.add(track_id)
                     save_progress(progress_data)
                     add_to_download_map(source_name, track_id, c['filename'], artist, title)
+                    queued_files.append({'filename': c['filename'], 'display': c['displayname'][:45], 'track_id': track_id, 'size_mb': c['size_mb']})
                     queued += 1
                     if tray:
                         tray.update(downloaded=queued)
@@ -779,9 +825,49 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
                     completed_set.add(track_id)
                     save_progress(progress_data)
                     add_to_download_map(source_name, track_id, c['filename'], artist, title)
+                    queued_files.append({'filename': c['filename'], 'display': c['displayname'][:45], 'track_id': track_id, 'size_mb': c['size_mb']})
                     queued += 1
     
-    console.print(f"\n[bold]Summary:[/bold] Queued {queued}, Failed {failed}")
+    # === DOWNLOAD MONITORING PHASE ===
+    # Instead of just saying "queued X", actually wait for downloads to finish
+    if queued_files:
+        console.print(f"\n[bold]Downloading {len(queued_files)} tracks...[/bold]")
+        _monitor_downloads(client, queued_files, tray)
+    
+    # Final summary
+    dl_failed = sum(1 for qf in queued_files 
+                    if qf.get('final_state') and not _is_success(qf['final_state']))
+    dl_completed = sum(1 for qf in queued_files 
+                       if qf.get('final_state') and _is_success(qf['final_state']))
+    
+    # Build detailed stats
+    format_counts = {}
+    total_size_mb = 0
+    for qf in queued_files:
+        if qf.get('final_state') and _is_success(qf['final_state']):
+            ext = os.path.splitext(qf.get('display', ''))[-1].upper() or '?'
+            format_counts[ext] = format_counts.get(ext, 0) + 1
+            total_size_mb += qf.get('size_mb', 0)
+    
+    # Summary line
+    summary_parts = [f"[green]{dl_completed}[/green] downloaded"]
+    if failed > 0:
+        summary_parts.append(f"[yellow]{failed}[/yellow] not found")
+    if dl_failed > 0:
+        summary_parts.append(f"[red]{dl_failed}[/red] transfer errors")
+    
+    console.print(f"\n[bold]Summary:[/bold] {', '.join(summary_parts)}")
+    
+    # Format breakdown
+    if format_counts:
+        fmt_str = ", ".join(f"{count} {ext}" for ext, count in sorted(format_counts.items()))
+        console.print(f"  [dim]Formats: {fmt_str}[/dim]")
+    if total_size_mb > 0:
+        console.print(f"  [dim]Total size: {total_size_mb:.1f} MB[/dim]")
+    
+    # Save structured failure data for smarter retries
+    if failed > 0 or dl_failed > 0:
+        _save_failure_details(progress_data, queued_files)
     
     # Update tray and send notification
     if tray:
@@ -789,8 +875,186 @@ def process_tracks(client, config, tracks, source_name, auto_mode=True):
         if NOTIFY_AVAILABLE:
             show_notification(
                 f"Finished: {source_name}",
-                f"Queued {queued} tracks, {failed} failed"
+                f"{dl_completed} downloaded, {failed} not found"
             )
+
+
+def _save_failure_details(progress_data, queued_files):
+    """Save structured failure data for smarter retries"""
+    failure_log_path = os.path.join(get_data_dir(), "failure_log.json")
+    
+    failures = []
+    
+    # Transfer errors (queued but download failed)
+    for qf in queued_files:
+        state = qf.get('final_state', '')
+        if state and not _is_success(state):
+            failures.append({
+                'track_id': qf.get('track_id', ''),
+                'filename': qf.get('filename', ''),
+                'reason': 'transfer_error',
+                'state': state,
+            })
+    
+    # Merge with existing failure log
+    existing = []
+    if os.path.exists(failure_log_path):
+        try:
+            with open(failure_log_path, 'r', encoding='utf-8') as f:
+                existing = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    
+    existing.extend(failures)
+    
+    with open(failure_log_path, 'w', encoding='utf-8') as f:
+        json.dump(existing, f, indent=2, ensure_ascii=False)
+
+
+def _monitor_downloads(client, queued_files, tray_icon, timeout=600, poll_interval=3):
+    """
+    Monitor queued downloads until they all complete, fail, or timeout.
+    
+    Shows a live-updating rich progress display with per-file status.
+    
+    Args:
+        client: SlskdClient instance
+        queued_files: list of dicts with 'filename', 'display', 'track_id'
+        tray_icon: TrayIcon instance (or None)
+        timeout: max seconds to wait for all downloads (default 10 min)
+        poll_interval: seconds between status checks
+    """
+    import time as _time
+    
+    filenames_set = {qf['filename'] for qf in queued_files}
+    start_time = _time.time()
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn("•"),
+        TextColumn("{task.fields[status]}"),
+        console=console
+    ) as progress:
+        # Create a progress bar for each file
+        tasks = {}
+        for qf in queued_files:
+            display = qf['display']
+            task_id = progress.add_task(
+                f"  {display}",
+                total=100,
+                completed=0,
+                status="[dim]waiting...[/dim]"
+            )
+            tasks[qf['filename']] = task_id
+        
+        # Poll loop
+        all_done = False
+        stale_count = 0  # count polls where nothing changed
+        last_state_snapshot = {}
+        
+        while not all_done:
+            elapsed = _time.time() - start_time
+            if elapsed > timeout:
+                # Mark remaining active files as timed out
+                for qf in queued_files:
+                    if not qf.get('final_state'):
+                        qf['final_state'] = 'stale'
+                        if qf['filename'] in tasks:
+                            progress.update(tasks[qf['filename']], 
+                                          status="[yellow]timed out[/yellow]", completed=0)
+                break
+            
+            # Get current transfer status from slskd
+            statuses = client.get_transfer_status_for_files(filenames_set)
+            
+            completed_count = 0
+            active_count = 0
+            
+            for qf in queued_files:
+                fname = qf['filename']
+                task_id = tasks.get(fname)
+                
+                if qf.get('final_state'):
+                    completed_count += 1
+                    continue
+                
+                status = statuses.get(fname)
+                
+                if status:
+                    state = status['state']
+                    pct = status.get('percentComplete', 0)
+                    speed = status.get('averageSpeed', 0)
+                    
+                    if _is_terminal(state):
+                        qf['final_state'] = state
+                        completed_count += 1
+                        
+                        if _is_success(state):
+                            progress.update(task_id, completed=100, 
+                                          status="[green]✓ done[/green]")
+                        else:
+                            # Extract the failure reason from compound state
+                            fail_reason = state.split(',')[-1].strip().lower()
+                            progress.update(task_id, 
+                                          status=f"[red]✗ {fail_reason}[/red]")
+                    else:
+                        active_count += 1
+                        # Format speed
+                        if speed > 0:
+                            if speed > 1024 * 1024:
+                                speed_str = f"{speed / 1024 / 1024:.1f} MB/s"
+                            elif speed > 1024:
+                                speed_str = f"{speed / 1024:.0f} KB/s"
+                            else:
+                                speed_str = f"{speed:.0f} B/s"
+                            status_text = f"[cyan]{speed_str}[/cyan]"
+                        else:
+                            state_display = state.lower()
+                            if state == 'InProgress':
+                                state_display = 'downloading'
+                            elif state == 'Queued':
+                                state_display = 'in queue'
+                            status_text = f"[dim]{state_display}[/dim]"
+                        
+                        progress.update(task_id, completed=pct, status=status_text)
+                else:
+                    # File not yet visible in transfers — still being enqueued
+                    active_count += 1
+            
+            # Update tray
+            if tray_icon:
+                done = sum(1 for qf in queued_files if qf.get('final_state') in ('Completed', 'Succeeded'))
+                tray_icon.update(downloaded=done)
+            
+            # Check if all done
+            if completed_count >= len(queued_files):
+                all_done = True
+                break
+            
+            # Stale detection — if nothing has changed state in a while, 
+            # and there are no active transfers, something might be stuck
+            current_snapshot = {fname: statuses.get(fname, {}).get('state', 'unknown') 
+                              for fname in filenames_set}
+            if current_snapshot == last_state_snapshot:
+                stale_count += 1
+            else:
+                stale_count = 0
+            last_state_snapshot = current_snapshot
+            
+            # If stuck for 2+ minutes with no progress, bail
+            if stale_count > (120 / poll_interval) and active_count > 0:
+                for qf in queued_files:
+                    if not qf.get('final_state'):
+                        qf['final_state'] = 'stale'
+                        if qf['filename'] in tasks:
+                            progress.update(tasks[qf['filename']], 
+                                          status="[yellow]stalled[/yellow]")
+                break
+            
+            _time.sleep(poll_interval)
 
 
 def process_all(client, config, liked_songs, playlists):
@@ -1057,9 +1321,20 @@ def main():
             progress_data = load_progress()
             failed = []
             for tid in progress_data['failed']:
-                parts = tid.split(' - ', 1)
+                # Strip format tag if present: "Artist - Title [mp3]" -> "Artist - Title"
+                clean_tid = re.sub(r'\s*\[(mp3|lossless)\]$', '', tid)
+                parts = clean_tid.split(' - ', 1)
                 if len(parts) == 2:
                     failed.append({'artist': parts[0], 'name': parts[1]})
+            # Deduplicate (same track may have failed in both formats)
+            seen = set()
+            unique_failed = []
+            for t in failed:
+                key = f"{t['artist']} - {t['name']}"
+                if key not in seen:
+                    seen.add(key)
+                    unique_failed.append(t)
+            failed = unique_failed
             if failed:
                 console.print(f"\n[bold]{len(failed)} failed tracks[/bold]")
                 progress_data['failed'] = []

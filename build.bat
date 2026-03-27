@@ -24,9 +24,9 @@ echo.
 echo Installing system tray and notification support...
 python -m pip install pystray pillow plyer
 
-:: Install cryptography for HTTPS callback server
-echo Installing cryptography for Spotify OAuth...
-python -m pip install cryptography
+:: Install unicode transliteration for smart search
+echo Installing search dependencies...
+python -m pip install unidecode
 
 :: Clean previous builds
 echo.
@@ -60,6 +60,7 @@ echo.
 echo Bundled features:
 echo   [x] Spotify OAuth login
 echo   [x] Soulseek auto-registration  
+echo   [x] Smart search with unicode support
 echo   [x] System tray icon
 echo   [x] Desktop notifications
 echo.

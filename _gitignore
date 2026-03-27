@@ -1,0 +1,24 @@
+# slskd binary (downloaded automatically)
+slskd_bin/
+
+# PyInstaller build artifacts
+build/
+dist/
+release/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

@@ -14,7 +14,8 @@ DEFAULT_CONFIG = {
     "search_timeout": 90,
     "auto_accept_min_size_mb": 3,
     "auto_accept_max_size_mb": 200,
-    "format_preference": "mp3"  # "mp3" for best mp3, "lossless" for flac/wav
+    "format_preference": "mp3",  # "mp3" for best mp3, "lossless" for flac/wav
+    "organize_mode": "playlist"  # "playlist", "artist", "artist_album", "flat"
 }
 
 # soulseek username rules

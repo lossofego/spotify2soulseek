@@ -88,7 +88,6 @@ On first launch, the app downloads the Soulseek client (slskd) automatically. Th
 
 **Spotify login fails**
 - Make sure browser opens the auth page
-- Click through any certificate warnings (localhost)
 - If stuck, close and retry
 
 ## Running from Source

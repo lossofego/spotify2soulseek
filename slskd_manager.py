@@ -16,7 +16,7 @@ import requests
 from pathlib import Path
 
 # slskd release info
-SLSKD_VERSION = "0.21.4"
+SLSKD_VERSION = "0.24.4"
 SLSKD_RELEASES = {
     "Windows": {
         "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-win-x64.zip",
@@ -24,14 +24,14 @@ SLSKD_RELEASES = {
         "archive_type": "zip"
     },
     "Darwin": {  # macOS
-        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-osx-x64.tar.gz",
+        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-osx-x64.zip",
         "executable": "slskd",
-        "archive_type": "tar.gz"
+        "archive_type": "zip"
     },
     "Linux": {
-        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-linux-x64.tar.gz",
+        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-linux-x64.zip",
         "executable": "slskd",
-        "archive_type": "tar.gz"
+        "archive_type": "zip"
     }
 }
 

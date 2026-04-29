@@ -45,6 +45,10 @@ RATE_LIMIT_BACKOFF_BASE = 2  # seconds, doubles each retry
 logger = logging.getLogger(__name__)
 
 
+class SpotifyAccessError(Exception):
+    """Raised when Spotify accepts login but blocks API access."""
+
+
 class CallbackHandler(BaseHTTPRequestHandler):
     """HTTP handler to catch the OAuth callback"""
 
@@ -55,6 +59,15 @@ class CallbackHandler(BaseHTTPRequestHandler):
         params = urllib.parse.parse_qs(parsed.query)
 
         if 'code' in params:
+            returned_state = params.get('state', [None])[0]
+            if returned_state != getattr(self.server, 'auth_state', None):
+                self.server.auth_error = "state_mismatch"
+                self.send_response(400)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b"<html><body><h1>Authorization state mismatch</h1></body></html>")
+                return
+
             self.server.auth_code = params['code'][0]
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -118,7 +131,11 @@ def load_token():
     if os.path.exists(path):
         try:
             with open(path, 'r') as f:
-                return json.load(f)
+                token_data = json.load(f)
+                if token_data.get('client_id') and token_data.get('client_id') != CLIENT_ID:
+                    logger.info("Saved Spotify token is for a different client ID, fresh login needed")
+                    return None
+                return token_data
         except (json.JSONDecodeError, IOError):
             logger.warning("Corrupt token file, will need fresh login")
             return None
@@ -129,6 +146,7 @@ def save_token(token_data):
     """Save token to disk"""
     path = get_token_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    token_data['client_id'] = CLIENT_ID
     with open(path, 'w') as f:
         json.dump(token_data, f)
 
@@ -205,6 +223,7 @@ def spotify_login():
     server = HTTPServer(('127.0.0.1', 8888), CallbackHandler)
     server.auth_code = None
     server.auth_error = None
+    server.auth_state = state
     server.timeout = 120  # 2 minute timeout
 
     try:
@@ -304,6 +323,14 @@ class SpotifyClient:
                     time.sleep(wait)
                     continue
 
+            if response.status_code == 403 and "not registered for this application" in response.text.lower():
+                raise SpotifyAccessError(
+                    "Spotify blocked this account for the current app. "
+                    "In the Spotify Developer Dashboard, open your app, go to Settings > Users Management, "
+                    "and add this Spotify account's name and email address. "
+                    "Development-mode apps also require the app owner to have Spotify Premium."
+                )
+
             # Raise on client errors (4xx except 429) or final server errors
             response.raise_for_status()
             return response.json()
@@ -364,12 +391,18 @@ class SpotifyClient:
                 break
 
             for item in data['items']:
+                if not item:
+                    continue
+
                 # Only include user's own playlists
-                if item['owner']['id'] == user_id:
+                owner = item.get('owner') or {}
+                playlist_id = item.get('id')
+
+                if owner.get('id') == user_id and playlist_id:
                     playlists.append({
-                        'name': item['name'],
-                        'id': item['id'],
-                        'total_tracks': item['tracks']['total'],
+                        'name': item.get('name') or 'Untitled playlist',
+                        'id': playlist_id,
+                        'total_tracks': (item.get('tracks') or {}).get('total', 0),
                         'tracks': []
                     })
 
@@ -387,7 +420,7 @@ class SpotifyClient:
             offset = 0
             while True:
                 try:
-                    data = self._get(f"playlists/{playlist['id']}/tracks",
+                    data = self._get(f"playlists/{playlist['id']}/items",
                                     {'limit': 100, 'offset': offset})
                 except requests.exceptions.HTTPError as e:
                     # Log and skip this playlist if we hit a permissions error (403)
@@ -409,7 +442,7 @@ class SpotifyClient:
                     break
 
                 for item in data['items']:
-                    track = item.get('track')
+                    track = item.get('item') or item.get('track')
                     if track and track.get('name'):
                         playlist['tracks'].append({
                             'name': track['name'],
@@ -423,6 +456,8 @@ class SpotifyClient:
                     break
 
                 time.sleep(0.1)
+
+            playlist['total_tracks'] = len(playlist['tracks'])
 
         return playlists
 

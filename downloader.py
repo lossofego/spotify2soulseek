@@ -19,7 +19,7 @@ from slskd_client import SlskdClient, SoulseekLoginError
 from csv_import import run_import
 from spotify_auth import (
     spotify_login, is_logged_in, logout, get_valid_token,
-    SpotifyClient, fetch_spotify_library
+    SpotifyAccessError, SpotifyClient, fetch_spotify_library
 )
 from smart_search import generate_search_queries, score_result
 
@@ -222,37 +222,42 @@ def do_spotify_login():
 
 def fetch_library_from_spotify():
     console.print("\n[bold]Fetching your Spotify library...[/bold]\n")
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-    ) as prog:
-        task = prog.add_task("Fetching liked songs...", total=None)
-        
-        token = get_valid_token()
-        client = SpotifyClient(token['access_token'])
-        
-        def liked_cb(cur, tot):
-            prog.update(task, completed=cur, total=tot, description=f"Liked songs: {cur}/{tot}")
-        
-        liked = client.get_liked_songs(progress_callback=liked_cb)
-        save_liked_songs(liked)
-        console.print(f"[green]✓ {len(liked)} liked songs[/green]")
-        
-        prog.update(task, description="Fetching playlists...", completed=0, total=None)
-        
-        def playlist_cb(cur, tot, name):
-            prog.update(task, completed=cur, total=tot, description=f"Playlist {cur}/{tot}: {name[:30]}")
-        
-        playlists = client.get_playlists(progress_callback=playlist_cb)
-        save_playlists(playlists)
-        
-        n_tracks = sum(len(p['tracks']) for p in playlists)
-        console.print(f"[green]✓ {len(playlists)} playlists ({n_tracks} tracks)[/green]")
-    
-    return liked, playlists
+
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+        ) as prog:
+            task = prog.add_task("Fetching liked songs...", total=None)
+
+            token = get_valid_token()
+            client = SpotifyClient(token['access_token'])
+
+            def liked_cb(cur, tot):
+                prog.update(task, completed=cur, total=tot, description=f"Liked songs: {cur}/{tot}")
+
+            liked = client.get_liked_songs(progress_callback=liked_cb)
+            save_liked_songs(liked)
+            console.print(f"[green]✓ {len(liked)} liked songs[/green]")
+
+            prog.update(task, description="Fetching playlists...", completed=0, total=None)
+
+            def playlist_cb(cur, tot, name):
+                prog.update(task, completed=cur, total=tot, description=f"Playlist {cur}/{tot}: {name[:30]}")
+
+            playlists = client.get_playlists(progress_callback=playlist_cb)
+            save_playlists(playlists)
+
+            n_tracks = sum(len(p['tracks']) for p in playlists)
+            console.print(f"[green]✓ {len(playlists)} playlists ({n_tracks} tracks)[/green]")
+
+        return liked, playlists
+    except SpotifyAccessError as e:
+        console.print(f"\n[red]Spotify access blocked:[/red] {e}")
+        console.print("[dim]After updating the Spotify app settings, choose option 1 again.[/dim]")
+        return load_liked_songs(), load_playlists()
 
 
 def get_spotify_user():

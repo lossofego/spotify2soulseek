@@ -7,6 +7,7 @@ Includes port conflict detection and automatic process recovery.
 
 import os
 import sys
+import json
 import platform
 import subprocess
 import time
@@ -22,23 +23,37 @@ logger = logging.getLogger(__name__)
 # slskd release info
 SLSKD_VERSION = "0.24.4"
 
-SLSKD_RELEASES = {
-    "Windows": {
-        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-win-x64.zip",
-        "executable": "slskd.exe",
-        "archive_type": "zip"
-    },
-    "Darwin": {  # macOS
-        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-osx-x64.zip",
-        "executable": "slskd",
-        "archive_type": "zip"
-    },
-    "Linux": {
-        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-linux-x64.zip",
-        "executable": "slskd",
+
+def _get_slskd_asset_platform():
+    """Return the slskd release platform name for this OS/CPU."""
+    system = platform.system()
+    machine = platform.machine().lower()
+
+    if machine in ("arm64", "aarch64"):
+        arch = "arm64"
+    elif machine.startswith("arm"):
+        arch = "arm"
+    else:
+        arch = "x64"
+
+    if system == "Windows":
+        return f"win-{arch}"
+    if system == "Darwin":
+        return f"osx-{arch}"
+    if system == "Linux":
+        return f"linux-{arch}"
+
+    raise Exception(f"Unsupported platform: {system}")
+
+
+def _get_slskd_release_info():
+    executable = "slskd.exe" if platform.system() == "Windows" else "slskd"
+    asset_platform = _get_slskd_asset_platform()
+    return {
+        "url": f"https://github.com/slskd/slskd/releases/download/{SLSKD_VERSION}/slskd-{SLSKD_VERSION}-{asset_platform}.zip",
+        "executable": executable,
         "archive_type": "zip"
     }
-}
 
 # Port scanning range
 DEFAULT_PORT = 5030
@@ -104,10 +119,7 @@ def get_import_dir():
 
 def get_slskd_executable():
     """Get path to slskd executable"""
-    system = platform.system()
-    if system not in SLSKD_RELEASES:
-        raise Exception(f"Unsupported platform: {system}")
-    info = SLSKD_RELEASES[system]
+    info = _get_slskd_release_info()
     return os.path.join(get_slskd_dir(), info["executable"])
 
 
@@ -120,10 +132,7 @@ def is_slskd_installed():
 def download_slskd(progress_callback=None):
     """Download slskd for the current platform"""
     system = platform.system()
-    if system not in SLSKD_RELEASES:
-        raise Exception(f"Unsupported platform: {system}")
-
-    info = SLSKD_RELEASES[system]
+    info = _get_slskd_release_info()
     url = info["url"]
     archive_type = info["archive_type"]
 
@@ -256,6 +265,11 @@ def get_active_port():
     return active_port or DEFAULT_PORT
 
 
+def _yaml_scalar(value):
+    """Quote a string as a YAML-safe scalar."""
+    return json.dumps(str(value))
+
+
 def create_slskd_config(soulseek_username, soulseek_password, web_port=5030):
     """Create slskd configuration file"""
     slskd_dir = get_slskd_dir()
@@ -272,11 +286,11 @@ web:
     username: slskd
     password: slskd
 soulseek:
-  username: {soulseek_username}
-  password: {soulseek_password}
-  description: spotify2slsk user
+  username: {_yaml_scalar(soulseek_username)}
+  password: {_yaml_scalar(soulseek_password)}
+  description: "spotify2slsk user"
 directories:
-  downloads: {download_dir_yaml}
+  downloads: {_yaml_scalar(download_dir_yaml)}
 shares:
   directories: []
 flags:
